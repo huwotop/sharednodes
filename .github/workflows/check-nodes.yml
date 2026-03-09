@@ -1,0 +1,48 @@
+name: Check Nodes
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  check-nodes:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Download mihomo
+      run: |
+        wget -O mihomo https://github.com/MetaCubeX/mihomo/releases/latest/download/mihomo-linux-amd64
+        chmod +x mihomo
+        
+    - name: Run node check script
+      run: |
+        python check_nodes.py \
+          --url "https://ghproxy.net/https://raw.githubusercontent.com/Ruk1ng001/freeSub/main/clash.yaml" \
+          --output "valid_nodes.txt" \
+          --timeout 10 \
+          --threads 20
+          
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add -f valid_nodes.txt valid_nodes.txt.b64 || true
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update valid nodes" && git push)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
