@@ -12,10 +12,18 @@ import subprocess
 import tempfile
 import atexit
 import sys
+from urllib.parse import quote
 
 MIHOMO_BIN = None
 MIHOMO_PROCESS = None
 MIHOMO_API_PORT = 9090
+
+TEST_URLS = [
+    'http://www.gstatic.com/generate_204',
+    'http://cp.cloudflare.com/generate_204',
+    'http://connectivitycheck.gstatic.com/generate_204',
+    'http://www.google.com/generate_204'
+]
 
 def find_mihomo():
     bin_names = ['mihomo', 'clash-meta', 'mihomo-windows-amd64.exe', 'mihomo-windows-386.exe']
@@ -62,9 +70,9 @@ def start_mihomo(nodes):
             stderr=subprocess.DEVNULL
         )
         
-        time.sleep(2)
+        time.sleep(3)
         
-        for _ in range(10):
+        for _ in range(15):
             try:
                 res = requests.get(f'http://127.0.0.1:{MIHOMO_API_PORT}/proxies', timeout=1)
                 if res.status_code == 200:
@@ -100,7 +108,21 @@ def start_mihomo(nodes):
             pass
         sys.exit(1)
 
-def test_node(node, timeout=5):
+def test_tcp_connect(server, port, timeout=3):
+    try:
+        start_time = time.time()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        result = sock.connect_ex((server, port))
+        sock.close()
+        if result == 0:
+            return True, int((time.time() - start_time) * 1000)
+        else:
+            return False, 'TCP connection failed'
+    except Exception as e:
+        return False, str(e)
+
+def test_node(node, timeout=10):
     try:
         node_type = node.get('type', '')
         
@@ -108,23 +130,35 @@ def test_node(node, timeout=5):
             return None, False, 'Unsupported type'
         
         node_name = node.get('name', 'Unknown')
+        server = node.get('server', '')
+        port = node.get('port', 0)
+        
+        tcp_ok, tcp_result = test_tcp_connect(server, port, 3)
+        if not tcp_ok:
+            return node, False, f'TCP failed: {tcp_result}'
         
         try:
-            response = requests.get(
-                f'http://127.0.0.1:{MIHOMO_API_PORT}/proxies/{node_name}/delay',
-                params={'timeout': str(timeout * 1000), 'url': 'http://www.gstatic.com/generate_204'},
-                timeout=timeout + 2
-            )
+            encoded_name = quote(node_name, safe='')
+            for test_url in TEST_URLS:
+                try:
+                    response = requests.get(
+                        f'http://127.0.0.1:{MIHOMO_API_PORT}/proxies/{encoded_name}/delay',
+                        params={'timeout': str(timeout * 1000), 'url': test_url},
+                        timeout=timeout + 3
+                    )
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        delay = data.get('delay', 0)
+                        if delay > 0:
+                            return node, True, delay
+                except requests.exceptions.Timeout:
+                    continue
+                except Exception:
+                    continue
             
-            if response.status_code == 200:
-                data = response.json()
-                delay = data.get('delay', 0)
-                return node, True, delay
-            else:
-                return node, False, f'HTTP {response.status_code}'
+            return node, False, 'All test URLs failed'
                 
-        except requests.exceptions.Timeout:
-            return node, False, 'Timeout'
         except Exception as e:
             return node, False, str(e)
             
@@ -201,8 +235,8 @@ def main():
     parser = argparse.ArgumentParser(description='Check Clash subscription nodes and save valid ones (requires mihomo)')
     parser.add_argument('--url', type=str, required=True, help='Clash subscription URL')
     parser.add_argument('--output', type=str, default='valid_nodes.txt', help='Output file')
-    parser.add_argument('--timeout', type=int, default=5, help='Connection timeout in seconds')
-    parser.add_argument('--threads', type=int, default=50, help='Number of threads')
+    parser.add_argument('--timeout', type=int, default=10, help='Connection timeout in seconds')
+    parser.add_argument('--threads', type=int, default=20, help='Number of threads')
     
     args = parser.parse_args()
     
@@ -218,7 +252,7 @@ def main():
     
     print("Starting mihomo...")
     start_mihomo(nodes)
-    print("Testing nodes using mihomo API...")
+    print("Testing nodes using mihomo API + TCP pre-check...")
     
     valid_nodes = []
     valid_links = []
