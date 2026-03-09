@@ -1,6 +1,7 @@
 subscription:
   urls:
-    - "https://raw.githubusercontent.com/Ruk1ng001/freeSub/main/clash.yaml"
+    - "https://example.com/subscribe1"
+    - "https://example.com/subscribe2"
 
 check:
   alive_test_url: "https://www.gstatic.com/generate_204"
