@@ -8,6 +8,7 @@ import (
 
 	"github.com/bestruirui/bestsub-action/internal/checker"
 	"github.com/bestruirui/bestsub-action/internal/config"
+	"github.com/bestruirui/bestsub-action/internal/converter"
 	"github.com/bestruirui/bestsub-action/internal/fetcher"
 	"github.com/bestruirui/bestsub-action/internal/model"
 )
@@ -67,7 +68,19 @@ func main() {
 	filteredNodes := checker.FilterAlive(nodes, cfg.Filter.MaxDelay)
 	fmt.Printf("筛选后剩余 %d 个节点\n", len(filteredNodes))
 
-	output := checker.GenerateYAML(filteredNodes)
+	var nodeRaws [][]byte
+	for _, node := range filteredNodes {
+		nodeRaws = append(nodeRaws, node.Raw)
+	}
+
+	links, err := converter.NodesToShareLinks(nodeRaws)
+	if err != nil {
+		fmt.Printf("转换节点链接失败: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("成功转换 %d 个分享链接\n", len(links))
+
+	output := converter.GenerateShareLinksFile(links)
 	err = os.WriteFile(cfg.Output.FileName, output, 0644)
 	if err != nil {
 		fmt.Printf("写入输出文件失败: %v\n", err)

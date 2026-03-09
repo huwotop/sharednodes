@@ -36,11 +36,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: filtered-nodes
-          path: filtered_nodes.yaml
+          path: filtered_nodes.txt
 
       - name: Commit and push changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add filtered_nodes.yaml || true
+          git add filtered_nodes.txt || true
           git diff --quiet && git diff --staged --quiet || (git commit -m "更新筛选后的节点 [skip ci]" && git push)

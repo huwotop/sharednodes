@@ -19,4 +19,4 @@ filter:
   exclude_countries: false
 
 output:
-  file_name: "filtered_nodes.yaml"
+  file_name: "filtered_nodes.txt"

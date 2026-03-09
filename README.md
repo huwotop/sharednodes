@@ -55,7 +55,7 @@ go build -o bestsub-action .
 
 ## 输出
 
-筛选后的节点会保存为 `filtered_nodes.yaml`，格式为 Clash 兼容的 YAML 格式。
+筛选后的节点会保存为 `filtered_nodes.txt`，每行一个节点分享链接格式（vmess://、ss://、trojan:// 等）。
 
 ## 注意事项
 

@@ -2,9 +2,7 @@ package checker
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -108,13 +106,4 @@ func FilterAlive(nodes []model.Node, maxDelay uint16) []model.Node {
 		}
 	}
 	return result
-}
-
-func GenerateYAML(nodes []model.Node) []byte {
-	var result strings.Builder
-	result.WriteString("proxies:\n")
-	for _, node := range nodes {
-		result.WriteString(fmt.Sprintf("  - %s\n", string(node.Raw)))
-	}
-	return []byte(result.String())
 }
