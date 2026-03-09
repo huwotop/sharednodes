@@ -11,6 +11,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/bestruirui/bestsub-action/internal/mihomo"
 	"github.com/bestruirui/bestsub-action/internal/model"
 	"github.com/panjf2000/ants/v2"
 )
