@@ -2,6 +2,7 @@ package checker
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -67,11 +68,13 @@ func (c *AliveChecker) Check(nodes []model.Node) (aliveCount, deadCount int64, a
 func (c *AliveChecker) checkNode(node *model.Node) (uint16, bool) {
 	var raw map[string]any
 	if err := yaml.Unmarshal(node.Raw, &raw); err != nil {
+		fmt.Printf("yaml.Unmarshal failed: %v\n", err)
 		return 0, false
 	}
 
 	client := mihomo.Proxy(raw)
 	if client == nil {
+		fmt.Printf("mihomo.Proxy returned nil\n")
 		return 0, false
 	}
 	defer client.Release()
@@ -82,12 +85,16 @@ func (c *AliveChecker) checkNode(node *model.Node) (uint16, bool) {
 
 	req, err := http.NewRequestWithContext(ctx, "GET", c.TestURL, nil)
 	if err != nil {
+		fmt.Printf("http.NewRequestWithContext failed: %v\n", err)
 		return 0, false
 	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
 	start := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
+		fmt.Printf("client.Do failed: %v\n", err)
 		return 0, false
 	}
 	defer resp.Body.Close()

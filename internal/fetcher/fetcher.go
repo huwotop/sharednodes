@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -39,15 +40,20 @@ func ParseNodes(content []byte) [][]byte {
 	}
 
 	if err := yaml.Unmarshal(content, &clashConfig); err == nil && len(clashConfig.Proxies) > 0 {
-		for _, proxy := range clashConfig.Proxies {
+		fmt.Printf("检测到 Clash 配置文件，包含 %d 个节点\n", len(clashConfig.Proxies))
+		for i, proxy := range clashConfig.Proxies {
 			nodeYaml, err := yaml.Marshal(proxy)
 			if err == nil {
 				result = append(result, nodeYaml)
+				if i < 3 {
+					fmt.Printf("  节点 %d: %v\n", i+1, string(nodeYaml))
+				}
 			}
 		}
 		return result
 	}
 
+	fmt.Println("尝试按行解析...")
 	lines := bytes.Split(content, []byte("\n"))
 	if len(lines) > 1 {
 		lines = lines[1:]
