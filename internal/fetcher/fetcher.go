@@ -1,10 +1,13 @@
 package fetcher
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 func FetchSubscription(url string) ([]byte, error) {
@@ -29,17 +32,47 @@ func FetchSubscription(url string) ([]byte, error) {
 }
 
 func ParseNodes(content []byte) [][]byte {
-	contentStr := string(content)
-	lines := strings.Split(contentStr, "\n")
-	var nodes [][]byte
+	var result [][]byte
 
-	for _, line := range lines {
+	var clashConfig struct {
+		Proxies []map[string]any `yaml:"proxies"`
+	}
+
+	if err := yaml.Unmarshal(content, &clashConfig); err == nil && len(clashConfig.Proxies) > 0 {
+		for _, proxy := range clashConfig.Proxies {
+			nodeYaml, err := yaml.Marshal(proxy)
+			if err == nil {
+				result = append(result, nodeYaml)
+			}
+		}
+		return result
+	}
+
+	lines := bytes.Split(content, []byte("\n"))
+	if len(lines) > 1 {
+		lines = lines[1:]
+		for _, line := range lines {
+			line = bytes.TrimSpace(line)
+			if len(line) == 0 {
+				continue
+			}
+			if len(line) > 4 {
+				line = line[4:]
+			}
+			result = append(result, line)
+		}
+		return result
+	}
+
+	contentStr := string(content)
+	linesStr := strings.Split(contentStr, "\n")
+	for _, line := range linesStr {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		nodes = append(nodes, []byte(line))
+		result = append(result, []byte(line))
 	}
 
-	return nodes
+	return result
 }
