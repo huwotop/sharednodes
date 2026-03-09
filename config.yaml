@@ -3,7 +3,7 @@ subscription:
     - "https://raw.githubusercontent.com/Ruk1ng001/freeSub/main/clash.yaml"
 
 check:
-  alive_test_url: "https://www.gstatic.com/generate_204"
+  alive_test_url: "https://www.google.com/generate_204"
   alive_test_status_code: 204
   alive_timeout: 10
   max_threads: 100
