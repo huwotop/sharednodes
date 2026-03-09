@@ -20,11 +20,16 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache: true
+          cache-dependency-path: scripts/node-checker/go.sum
       
       - name: 配置 Go 代理
         run: |
           go env -w GOPROXY=https://goproxy.cn,direct
+      
+      - name: 安装依赖
+        run: |
+          cd scripts/node-checker
+          go mod tidy
       
       - name: 创建节点目录
         run: mkdir -p jiedian
