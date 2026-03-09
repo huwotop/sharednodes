@@ -1,0 +1,41 @@
+name: Daily Node Filter
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  filter-nodes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Build
+        run: |
+          cd 新项目
+          go build -o bestsub-action .
+
+      - name: Run filter
+        run: |
+          cd 新项目
+          ./bestsub-action
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: filtered-nodes
+          path: 新项目/filtered_nodes.yaml
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add 新项目/filtered_nodes.yaml || true
+          git diff --quiet && git diff --staged --quiet || (git commit -m "更新筛选后的节点 [skip ci]" && git push)

@@ -1,0 +1,23 @@
+subscription:
+  urls:
+    - "https://example.com/subscribe1"
+    - "https://example.com/subscribe2"
+
+check:
+  alive_test_url: "https://www.gstatic.com/generate_204"
+  alive_test_status_code: 204
+  alive_timeout: 10
+  max_threads: 100
+  node_pool_size: 1000
+
+filter:
+  min_alive: true
+  max_delay: 500
+  countries:
+    - "US"
+    - "JP"
+    - "SG"
+  exclude_countries: false
+
+output:
+  file_name: "filtered_nodes.yaml"
