@@ -12,7 +12,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/bestruirui/bestsub-action/internal/model"
-	"github.com/metacubex/mihomo/adapter"
 	"github.com/panjf2000/ants/v2"
 )
 
@@ -72,17 +71,12 @@ func (c *AliveChecker) checkNode(node *model.Node) (uint16, bool) {
 		return 0, false
 	}
 
-	proxy, err := adapter.ParseProxy(raw)
-	if err != nil {
+	client := mihomo.Proxy(raw)
+	if client == nil {
 		return 0, false
 	}
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			DialContext: proxy.DialContext,
-		},
-		Timeout: time.Duration(c.Timeout) * time.Second,
-	}
+	defer client.Release()
+	client.Timeout = time.Duration(c.Timeout) * time.Second
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.Timeout)*time.Second)
 	defer cancel()
