@@ -25,9 +25,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: Download mihomo
+    - name: Extract mihomo
       run: |
-        wget -O mihomo https://github.com/MetaCubeX/mihomo/releases/latest/download/mihomo-linux-amd64
+        gunzip -c mihomo-linux-amd64-v1.19.20.gz > mihomo
         chmod +x mihomo
         
     - name: Run node check script
